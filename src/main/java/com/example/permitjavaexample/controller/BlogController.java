@@ -2,8 +2,11 @@ package com.example.permitjavaexample.controller;
 
 import com.example.permitjavaexample.model.Blog;
 import com.example.permitjavaexample.service.BlogService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import io.permit.sdk.enforcement.User;
 
 import java.util.List;
 
@@ -18,39 +21,34 @@ public class BlogController {
     }
 
     @GetMapping
-    public List<Blog> getAllBlogs() {
-        return blogService.getAllBlogs();
+    public List<Blog> getAllBlogs(HttpServletRequest request) {
+        User currentUser = (User) request.getAttribute("user");
+        return blogService.getAllBlogs(currentUser);
     }
 
     @GetMapping("/{id}")
-    public Blog getBlogById(@PathVariable("id") int id) {
-        Blog blog = blogService.getBlogById(id);
-        if (blog == null) {
-            throw new RuntimeException("Blog with id " + id + " not found");
-        }
-        return blog;
+    public Blog getBlogById(HttpServletRequest request, @PathVariable("id") int id) {
+        User currentUser = (User) request.getAttribute("user");
+        return blogService.getBlog(currentUser, id);
     }
 
     @PostMapping
-    public Blog addBlog(@RequestBody Blog blog) {
-        return blogService.addBlog(blog);
+    @ResponseStatus(HttpStatus.CREATED)
+    public Blog addBlog(HttpServletRequest request, @RequestBody String content) {
+        User currentUser = (User) request.getAttribute("user");
+        return blogService.addBlog(currentUser, content);
     }
 
     @PutMapping("/{id}")
-    public Blog updateBlog(@PathVariable("id") int id, @RequestBody Blog blog) {
-        Blog updatedBlog = blogService.updateBlog(id, blog);
-        if (updatedBlog == null) {
-            throw new RuntimeException("Blog with id " + id + " not found");
-        }
-        return updatedBlog;
+    public Blog updateBlog(HttpServletRequest request, @PathVariable("id") int id, @RequestBody String content) {
+        User currentUser = (User) request.getAttribute("user");
+        return blogService.updateBlog(currentUser, id, content);
     }
 
     @DeleteMapping("/{id}")
-    public String deleteBlog(@PathVariable("id") int id) {
-        boolean isDeleted = blogService.deleteBlog(id);
-        if (!isDeleted) {
-            throw new RuntimeException("Blog with id " + id + " not found");
-        }
+    public String deleteBlog(HttpServletRequest request, @PathVariable("id") int id) {
+        User currentUser = (User) request.getAttribute("user");
+        blogService.deleteBlog(currentUser, id);
         return "Deleted blog with id " + id;
     }
 }

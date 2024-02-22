@@ -1,9 +1,13 @@
 package com.example.permitjavaexample.service;
 
+import com.example.permitjavaexample.exception.ResourceNotFoundException;
 import com.example.permitjavaexample.model.Blog;
+import io.permit.sdk.enforcement.Resource;
+import io.permit.sdk.enforcement.User;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -12,44 +16,69 @@ public class BlogService {
     private final List<Blog> blogs = new ArrayList<>();
     private final AtomicInteger blogIdCounter = new AtomicInteger();
 
-    public BlogService(@Value("${permit.api-key}") String apiKey) {
-        this.permit = new Permit(
-                new PermitConfig.Builder(apiKey)
-                        .withPdpAddress("https://cloudpdp.api.permit.io")
-                        .build()
-        );
+    private final Resource.Builder resourceBuilder = new Resource.Builder("blog");
+    private final UserService userService;
 
+
+    public BlogService(UserService userService) {
+        this.userService = userService;
         blogs.add(new Blog(blogIdCounter.incrementAndGet(), "user1", "First Blog Post"));
         blogs.add(new Blog(blogIdCounter.incrementAndGet(), "user2", "Second Blog Post"));
     }
 
-    public List<Blog> getAllBlogs() {
-        return new ArrayList<>(blogs);
+    private void authorize(User user, String action) {
+        userService.authorize(user, action, resourceBuilder.build());
     }
 
-    public Blog getBlogById(int id) {
+    private void authorize(User user, String action, Blog blog) {
+        var attributes = new HashMap<String, Object>();
+        attributes.put("author", blog.getAuthor());
+        userService.authorize(user, action, resourceBuilder.withKey(blog.getId().toString()).withAttributes(attributes).build());
+    }
+
+
+    private Blog getBlogById(int id) {
         return blogs.stream()
                 .filter(blog -> blog.getId().equals(id))
                 .findFirst()
-                .orElse(null);
+                .orElseThrow(() -> new ResourceNotFoundException("Blog with id " + id + " not found"));
     }
 
-    public Blog addBlog(Blog blog) {
-        blog.setId(blogIdCounter.incrementAndGet());
+    public List<Blog> getAllBlogs(User user) {
+        authorize(user, "read");
+        return new ArrayList<>(blogs);
+    }
+
+    public Blog getBlog(User user, int id) {
+        authorize(user, "read");
+        return getBlogById(id);
+    }
+
+    public Blog addBlog(User user, String content) {
+        authorize(user, "create");
+        Blog blog = new Blog(blogIdCounter.incrementAndGet(), user.getKey(), content);
         blogs.add(blog);
         return blog;
     }
 
-    public Blog updateBlog(int id, Blog updatedBlog) {
+    public Blog updateBlog(User user, int id, String content) {
         Blog blog = getBlogById(id);
-        if (blog != null) {
-            blog.setContent(updatedBlog.getContent());
-            return blog;
-        }
-        return null;
+        authorize(user, "update", blog);
+        blog.setContent(content);
+        return blog;
     }
 
-    public boolean deleteBlog(int id) {
-        return blogs.removeIf(blog -> blog.getId().equals(id));
+    public void deleteBlog(User user, int id) {
+        boolean isDeleted = blogs.removeIf(blog -> {
+            if (blog.getId().equals(id)) {
+                authorize(user, "delete", blog);
+                return true;
+            } else {
+                return false;
+            }
+        });
+        if (!isDeleted) {
+            throw new ResourceNotFoundException("Blog with id " + id + " not found");
+        }
     }
 }
