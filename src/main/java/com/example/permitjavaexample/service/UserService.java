@@ -39,6 +39,13 @@ public class UserService {
         return user;
     }
 
+    public void assignRole(User user, String role) {
+        try {
+            permit.api.users.assignRole(user.getKey(), role, "default");
+        } catch (PermitApiError | PermitContextError | IOException e) {
+            throw new RuntimeException("Failed to assign role to user", e);
+        }
+    }
 
     public void authorize(User user, String action, Resource resource) {
         if (user == null) {
