@@ -25,10 +25,22 @@ Before you begin, ensure you have the following installed:
 - Gradle
 - Docker (optional, for running permit.io locally)
 
-### 1. Setting Up Permit.io
+### 1. Setting Up Permit.io using Terraform
 
-To use permit.io for authorization, you'll need to create a new project in your workspace.
+Login to your Permit.io account and create a new project in your workspace.
 With your new project, copy your API key, as you will need it to configure the application.
+
+Navigate to `main.tf` and paste your API key into the `api_key` property.
+
+Then, run the following commands to create the resources in your Permit.io project:
+
+```shell
+terraform init
+terraform plan
+terraform apply
+```
+
+You should see under the Policy Editor a "Blog" and "Owned Blog" resources, and the roles `viewer`, `editor`, and `admin`.
 
 ### 2. Starting your local PDP container
 
@@ -42,9 +54,9 @@ docker run -it -p 7766:7000 --env PDP_DEBUG=True --env PDP_API_KEY=<YOUR_API_KEY
 ### 3. Configuring the Application
 
 Navigate to the `src/main/resources` directory and open the `application.yaml` file.
-Paste your API key into the `permit.api-key` property.
+Paste your API key into the `permit.apiKey` property.
 
-> You may use the Cloud PDP by setting the `permit.pdp-url` property to https://cloudpdp.api.permit.io, although it is
+> You may use the Cloud PDP by setting the `permit.pdpUrl` property to https://cloudpdp.api.permit.io, although it is
 > not
 > recommended as it does not support ABAC policies used by in this project.
 
@@ -60,23 +72,30 @@ Then access the application Swagger at http://localhost:8080/swagger-ui/index.ht
 
 ## Usage
 
-The application contains a makeshift user authentication. You can register using the `/api/users/signup` with a username
-in the request body, then use it in the `Authorization` header with the username as the Bearer token.
-For example:
+The application contains a makeshift user authentication. Create a new user using the `/api/users/signup` endpoint:
 ```shell
 curl -X POST "http://localhost:8080/api/users/signup" -H "Content-Type: application/json" -d 'myuser'
-curl -X GET "http://localhost:8080/api/blogs" -H "Authorization: Bearer myuser"
 ```
-Alternatively, you can use the Swagger UI authorize with the username.
+You should be able to view the user in your Permit.io project, under Directory > All Tenants.
 
-When signing up, the user is synced to your Permit.io project. You can then assign roles and permissions to the user.
+Initially the user has no roles, therefor it cannot do much. For example, trying to list the blogs will result in a 403 Forbidden response:
+```shell
+curl -X GET "http://localhost:8080/api/blogs" -H "Authorization: Bearer myuser"
+# 403 Forbidden
+```
+Assign the user with a `viewer` role using:
+```shell
+curl -X POST "http://localhost:8080/api/users/assign-role" -H "Authorization: Bearer myuser" -d "viewer"
+```
+
+Alternatively, you can use the Swagger UI authorize with the username.
 
 ### Blog Resource
 
 The application contains a simple blog resource with the actions `create`, `read`, `update`, and `delete`.
 
 #### 1. Reading Blogs
-Assign your user with a `viewer` role and permissions to `read` blogs. Then you can list the blogs using:
+Assign your user with a `viewer` role (permissions to `read` blogs). Then you can list the blogs using:
 ```shell
 curl -X GET "http://localhost:8080/api/blogs" -H "Authorization: Bearer myuser"
 ```
@@ -86,22 +105,20 @@ curl -X GET "http://localhost:8080/api/blogs/1" -H "Authorization: Bearer myuser
 ```
 
 #### 2. Creating Blogs
-Assign your user with an `editor` role and permissions to `create` blogs. Then you can create a blog using:
+Assign your user with an `editor` role (permissions to `create` blogs). Then you can create a blog using:
 ```shell
 curl -X POST "http://localhost:8080/api/blogs" -H "Authorization: Bearer myuser" -H "Content-Type: application/json" -d 'This is my blog'
 ```
 
 #### 3. Modifying Blogs
-In order to allow users only to update or delete their own blogs, the application uses ABAC policies.
+Editors can `update` and `delete` their own blogs, defined by a Resource Set called `Owned Blog` with a condition where the `resource.author` attribute equals (ref) the `user.key` attribute.
 
-1. Create a new Resource Set called `Owned Blog` with a condition where the `resource.author` attribute equals (ref) the `user.key` attribute.
-2. Assign the `editor` role permissions to `update` and `delete` the `Owned Blog` resource set.
-
-Then you can update or delete your blog, assuming the blog with ID 3 was created on [step 2](#2-creating-blogs):
+You can update or delete your blog, assuming the blog with ID 3 was created on [step 2](#2-creating-blogs):
 ```shell
 curl -X PUT "http://localhost:8080/api/blogs/3" -H "Authorization: Bearer myuser" -H "Content-Type: application/json" -d 'This is my updated blog'
 curl -X DELETE "http://localhost:8080/api/blogs/3" -H "Authorization: Bearer myuser"
 ```
+
 Modifying other blogs will result in a 403 Forbidden response.
 ```shell
 curl -X DELETE "http://localhost:8080/api/blogs/1" -H "Authorization: Bearer myuser"
@@ -109,7 +126,7 @@ curl -X DELETE "http://localhost:8080/api/blogs/1" -H "Authorization: Bearer myu
 ```
 
 #### 4. Admin Access
-Assign your user with an `admin` role and permissions for the entire Blog resource. Then you can perform any action on the blogs, including deleting other user's blogs.
+Assign your user with an `admin` role. Then you can perform any action on the blogs, including deleting other user's blogs.
 ```shell
 curl -X DELETE "http://localhost:8080/api/blogs/1" -H "Authorization: Bearer myuser"
 ```
