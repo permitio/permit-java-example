@@ -60,10 +60,27 @@ resource "permitio_role" "editor" {
   key         = "editor"
   name        = "editor"
   description = "Create blogs, update and delete them"
-  permissions = ["blog:read", "blog:create"] # TODO "own_blog:update", "own_blog:delete"
+  permissions = ["blog:read", "blog:create"]
   extends     = []
   depends_on  = [
     permitio_resource.blog,
+  ]
+}
+
+resource "permitio_condition_set_rule" "allow_editors_to_update_own_blogs" {
+  user_set = "editor"
+  resource_set = "own_blog"
+  permission = "blog:update"
+  depends_on = [
+    permitio_resource_set.own_blog,
+  ]
+}
+
+resource "permitio_condition_set_rule" "allow_editors_to_delete_own_blogs" {
+  user_set = "editor"
+  resource_set = "own_blog"
+  permission = "blog:delete"
+  depends_on = [
     permitio_resource_set.own_blog,
   ]
 }
