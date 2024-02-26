@@ -1,9 +1,12 @@
 package com.example.permitjavaexample;
 
 import com.example.permitjavaexample.service.BlogService;
+import com.example.permitjavaexample.service.UserService;
 import io.permit.sdk.enforcement.User;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +18,7 @@ import org.springframework.http.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS) // Allows non-static @BeforeAll
 public class BlogControllerIntegrationTests {
     @LocalServerPort
     private int port;
@@ -23,8 +27,22 @@ public class BlogControllerIntegrationTests {
     private TestRestTemplate restTemplate;
     @Autowired
     private BlogService blogService;
+    @Autowired
+    private UserService userService;
 
     private String baseUrl;
+
+    @BeforeAll
+    void setUpAll() {
+        User viewer = userService.signup("viewer");
+        userService.assignRole(viewer, "viewer");
+
+        User editor = userService.signup("editor");
+        userService.assignRole(editor, "editor");
+
+        User admin = userService.signup("admin");
+        userService.assignRole(admin, "admin");
+    }
 
     @BeforeEach
     void setUp() {
