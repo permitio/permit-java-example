@@ -7,9 +7,14 @@ terraform {
   }
 }
 
+variable "permit_api_key" {
+  type        = string
+  description = "The API key for the Permit.io API"
+}
+
 provider "permitio" {
   api_url = "https://api.permit.io"
-  api_key = "<your-api-key>" # Please insert your API KEY
+  api_key = var.permit_api_key
 }
 
 resource "permitio_resource" "blog" {

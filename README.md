@@ -23,17 +23,17 @@ Before you begin, ensure you have the following installed:
 
 - Java JDK 21
 - Gradle
-- Docker (optional, for running permit.io locally)
+- Docker (optional, for running Permit.io PDP locally)
 
 ### 1. Setting Up Permit.io using Terraform
 
-Login to your Permit.io account and create a new project in your workspace.
-With your new project, copy your API key, as you will need it to configure the application.
+Login to your Permit.io account and create a new project in your workspace and copy your API key.
+Set the `PERMIT_API_KEY` environment variable to your API key:
 
-Navigate to `main.tf` and paste your API key into the `api_key` property.
-
-Then, run the following commands to create the resources in your Permit.io project:
-
+```shell
+export PERMIT_API_KEY=<YOUR_API_KEY>
+```
+Then run the following commands to create the resources in your Permit.io project:
 ```shell
 terraform init
 terraform plan
@@ -51,16 +51,10 @@ You can run a local PDP container using Docker:
 docker run -it -p 7766:7000 --env PDP_DEBUG=True --env PDP_API_KEY=<YOUR_API_KEY> permitio/pdp-v2:latest
 ```
 
-### 3. Configuring the Application
+> You may use the Cloud PDP by modifying the `src/resources/application.yaml` config, setting the `permit.pdpUrl` property to https://cloudpdp.api.permit.io. 
+> It is not recommended as it does not support ABAC policies used in this project.
 
-Navigate to the `src/main/resources` directory and open the `application.yaml` file.
-Paste your API key into the `permit.apiKey` property.
-
-> You may use the Cloud PDP by setting the `permit.pdpUrl` property to https://cloudpdp.api.permit.io, although it is
-> not
-> recommended as it does not support ABAC policies used by in this project.
-
-### 4. Running the Application
+### 3. Running the Application
 
 You can run the application using the following Gradle command:
 
