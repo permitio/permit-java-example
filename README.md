@@ -124,3 +124,30 @@ Assign your user with an `admin` role. Then you can perform any action on the bl
 ```shell
 curl -X DELETE "http://localhost:8080/api/blogs/1" -H "Authorization: Bearer myuser"
 ```
+
+## Testing
+
+This example project contains integration tests that demonstrate the authorization flow using permit.io. 
+
+You can run all tests using the following Gradle command:
+```shell
+./gradlew test
+```
+
+First, the test suite create a viewer, editor and admin users, and assign them with the respective roles.
+```java
+User viewer = userService.signup("viewer");
+userService.assignRole(viewer, "viewer");
+
+User editor = userService.signup("editor");
+userService.assignRole(editor, "editor");
+
+User admin = userService.signup("admin");
+userService.assignRole(admin, "admin");
+```
+
+* Unauthenticated users or unknown users cannot access the API.
+* Viewer can read blogs, but cannot create, update, or delete them.
+* Editor can read and create blogs, and can update or delete them.
+* Editor cannot update or delete other user's blogs. 
+* Admin can update or delete other user's blogs.
