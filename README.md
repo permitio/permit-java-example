@@ -41,6 +41,7 @@ terraform apply
 ```
 
 You should see under the Policy Editor a "Blog" and "Owned Blog" resources, and the roles `viewer`, `editor`, and `admin`.
+![image](https://github.com/permitio/permit-java-example/assets/12188774/d1fd9a57-aae0-42c1-a3e5-81e9af912b91)
 
 ### 2. Starting your local PDP container
 
