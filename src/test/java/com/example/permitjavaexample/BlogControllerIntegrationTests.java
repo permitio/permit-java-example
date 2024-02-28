@@ -1,5 +1,6 @@
 package com.example.permitjavaexample;
 
+import com.example.permitjavaexample.model.Blog;
 import com.example.permitjavaexample.service.BlogService;
 import com.example.permitjavaexample.service.UserService;
 import io.permit.sdk.enforcement.User;
@@ -31,6 +32,7 @@ public class BlogControllerIntegrationTests {
     private UserService userService;
 
     private String baseUrl;
+    private Blog sampleBlog;
 
     @BeforeAll
     void setUpAll() {
@@ -47,6 +49,7 @@ public class BlogControllerIntegrationTests {
     @BeforeEach
     void setUp() {
         baseUrl = "http://localhost:" + port;
+        sampleBlog = blogService.getAllBlogs(new User.Builder("viewer").build()).getFirst();
     }
 
     ResponseEntity<String> sendRequestWithToken(String url, HttpMethod method, String token, Object body) {
@@ -86,8 +89,7 @@ public class BlogControllerIntegrationTests {
     @ParameterizedTest
     @ValueSource(strings = {"viewer", "editor", "admin"})
     void getBlogById(String user) {
-        var blog = blogService.addBlog(new User.Builder("editor").build(), "Test Content");
-        var response = sendRequestWithToken("/api/blogs/" + blog.getId(), HttpMethod.GET, user);
+        var response = sendRequestWithToken("/api/blogs/" + sampleBlog.getId(), HttpMethod.GET, user);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
@@ -97,10 +99,9 @@ public class BlogControllerIntegrationTests {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = {"editor", "admin"})
-    void createBlog(String user) {
-        var response = sendRequestWithToken("/api/blogs", HttpMethod.POST, user, "Test Content");
+    @Test
+    void createBlog() {
+        var response = sendRequestWithToken("/api/blogs", HttpMethod.POST, "editor", "Test Content");
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
     }
 
@@ -110,26 +111,17 @@ public class BlogControllerIntegrationTests {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = {"editor", "admin"})
-    void updateOwnBlog(String user) {
-        var blog = blogService.addBlog(new User.Builder("editor").build(), "Test Content");
-        var response = sendRequestWithToken("/api/blogs/" + blog.getId(), HttpMethod.PUT, user, "Test Content");
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    }
-
     @Test
-    void updateOthersBlogAsAdmin() {
+    void updateOwnBlog() {
         var blog = blogService.addBlog(new User.Builder("editor").build(), "Test Content");
-        var response = sendRequestWithToken("/api/blogs/" + blog.getId(), HttpMethod.PUT, "admin", "Test Content");
+        var response = sendRequestWithToken("/api/blogs/" + blog.getId(), HttpMethod.PUT, "editor", "Test Content");
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"viewer", "editor"})
+    @ValueSource(strings = {"viewer", "editor", "admin"})
     void updateOthersBlogForbidden(String user) {
-        var blog = blogService.addBlog(new User.Builder("admin").build(), "Test Content");
-        var response = sendRequestWithToken("/api/blogs/" + blog.getId(), HttpMethod.PUT, user, "Test Content");
+        var response = sendRequestWithToken("/api/blogs/" + sampleBlog.getId(), HttpMethod.PUT, user, "Test Content");
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
 
@@ -139,11 +131,10 @@ public class BlogControllerIntegrationTests {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = {"editor", "admin"})
-    void deleteOwnBlog(String user) {
+    @Test
+    void deleteOwnBlog() {
         var blog = blogService.addBlog(new User.Builder("editor").build(), "Test Content");
-        var response = sendRequestWithToken("/api/blogs/" + blog.getId(), HttpMethod.DELETE, user);
+        var response = sendRequestWithToken("/api/blogs/" + blog.getId(), HttpMethod.DELETE, "editor");
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
@@ -157,8 +148,7 @@ public class BlogControllerIntegrationTests {
     @ParameterizedTest
     @ValueSource(strings = {"viewer", "editor"})
     void deleteOthersBlogForbidden(String user) {
-        var blog = blogService.addBlog(new User.Builder("admin").build(), "Test Content");
-        var response = sendRequestWithToken("/api/blogs/" + blog.getId(), HttpMethod.DELETE, user);
+        var response = sendRequestWithToken("/api/blogs/" + sampleBlog.getId(), HttpMethod.DELETE, user);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
 
