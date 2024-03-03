@@ -97,7 +97,7 @@ resource "permitio_relation" "blog_comment_relation" {
   ]
 }
 
-resource "permitio_role" "blogAuthor" {
+resource "permitio_role" "blog_author" {
   key         = "author"
   name        = "author"
   description = "Update and delete own blogs"
@@ -108,7 +108,7 @@ resource "permitio_role" "blogAuthor" {
   ]
 }
 
-resource "permitio_role" "commentModerator" {
+resource "permitio_role" "comment_moderator" {
   key         = "moderator"
   name        = "moderator"
   description = "Delete comments on own blogs"
@@ -119,17 +119,18 @@ resource "permitio_role" "commentModerator" {
   ]
 }
 
-resource "permitio_role_derivation" "blogAuthorCommentModerator" {
-  role        = permitio_role.blogAuthor.key
+// Derive blog#author to comment#moderator for child comments
+resource "permitio_role_derivation" "blog_author_comment_moderator" {
+  role        = permitio_role.blog_author.key
   on_resource = permitio_resource.blog.key
   resource    = permitio_resource.comment.key
-  to_role     = permitio_role.commentModerator.key
+  to_role     = permitio_role.comment_moderator.key
   linked_by   = permitio_relation.blog_comment_relation.key
   depends_on  = [
     permitio_resource.blog,
     permitio_resource.comment,
-    permitio_role.commentModerator,
-    permitio_role.blogAuthor,
+    permitio_role.comment_moderator,
+    permitio_role.blog_author,
     permitio_relation.blog_comment_relation,
   ]
 }

@@ -139,8 +139,8 @@ First, the test suite create a viewer, editor and admin users, and assign them w
 Then, it asserts:
 * Unauthenticated users or unknown users cannot access the API.
 * Viewer can read blogs, but cannot create, update, or delete them. (RBAC)
-* Editor can read and create blogs, and can update or delete them. (ABAC)
+* Editor can read and create blogs, and can update or delete their own blogs. (ABAC)
 * Editor cannot update or delete other user's blogs. 
-* Viewer can comment on blogs, and can update or delete them. (ABAC)
-* Editor can delete comments on their blogs. (ReBAC)
+* Viewer can comment on blogs, and can update or delete their own comments. (ABAC)
+* Editor can delete comments on their own blogs. (ReBAC)
 * Admin can delete other user's blogs and comments.
