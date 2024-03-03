@@ -85,45 +85,90 @@ curl -X POST "http://localhost:8080/api/users/assign-role" -H "Authorization: Be
 
 Alternatively, you can use the Swagger UI authorize with the username.
 
-### Blog Resource
+### Example Usage
 
-The application contains a simple blog resource with the actions `create`, `read`, `update`, and `delete`.
+The application contains simple APIs for creating, reading, updating, and deleting blog and comment resources.
+Here is an example of how to use the application:
 
 #### 1. Reading Blogs
-Assign your user with a `viewer` role (permissions to `read` blogs). Then you can list the blogs using:
+With your 'viewer' role, you can read the blogs. List all blogs using:
 ```shell
-curl -X GET "http://localhost:8080/api/blogs" -H "Authorization: Bearer myuser"
+curl -X GET "http://localhost:8080/api/blogs" -H "Authorization: Bearer my-user"
 ```
-Or get specific blog by ID:
+Initially, there are no blogs, so lets try to create one using:
 ```shell
-curl -X GET "http://localhost:8080/api/blogs/1" -H "Authorization: Bearer myuser"
+curl -X POST "http://localhost:8080/api/blogs" -H "Authorization: Bearer my-user" -H "Content-Type: application/json" -d 'This is my blog'
+# 403 Forbidden
+```
+Turns out viewers cannot create blogs. You can assign your user with an `editor` role using:
+```shell
+curl -X POST "http://localhost:8080/api/users/assign-role" -H "Authorization: Bearer my-user" -d "editor"
+```
+Then you can create a blog using:
+```shell
+curl -X POST "http://localhost:8080/api/blogs" -H "Authorization: Bearer my-user" -H "Content-Type: application/json" -d 'This is my blog'
+```
+Now you can read the blog using (assuming the blog ID is 1):
+```shell
+curl -X GET "http://localhost:8080/api/blogs/1" -H "Authorization: Bearer my-user"
 ```
 
-#### 2. Creating Blogs
-Assign your user with an `editor` role (permissions to `create` blogs). Then you can create a blog using:
+#### 2. Commenting on blogs
+Let's create another user and assign it with a `viewer` role:
 ```shell
-curl -X POST "http://localhost:8080/api/blogs" -H "Authorization: Bearer myuser" -H "Content-Type: application/json" -d 'This is my blog'
+curl -X POST "http://localhost:8080/api/users/signup" -H "Content-Type: application/json" -d 'other-user'
+curl -X POST "http://localhost:8080/api/users/assign-role" -H "Authorization: Bearer myviewer" -d "viewer"
+```
+Now, the user can comment our the blog using:
+```shell
+curl -X POST "http://localhost:8080/api/blogs/1/comments" -H "Authorization: Bearer other-user" -H "Content-Type: application/json" -d 'This blog is not good!'
+```
+But it wasn't enough, so it wanted to update the comment:
+```shell
+curl -X POST "http://localhost:8080/api/blogs/1/comments" -H "Authorization: Bearer other-user" -H "Content-Type: application/json" -d 'This blog is awful!'
+```
+The negative comment by `other-user` was not well received by `my-user`, so it wanted to change it:
+```shell
+curl -X PUT "http://localhost:8080/api/blogs/1/comments/1" -H "Authorization: Bearer my-user" -H "Content-Type: application/json" -d 'This blog is great!'
+# 403 Forbidden
+```
+Although being the author of the blog, `my-user` cannot update other user's comments, but it can delete it:
+```shell
+curl -X DELETE "http://localhost:8080/api/blogs/1/comments/1" -H "Authorization: Bearer my-user"
+```
+Feeling sorry, `other-user` left another comment:
+```shell
+curl -X POST "http://localhost:8080/api/blogs/1/comments" -H "Authorization: Bearer other-user" -H "Content-Type: application/json" -d 'This blog is great!'
+```
+But regretted it immediately and wanted to delete it:
+```shell
+curl -X DELETE "http://localhost:8080/api/blogs/1/comments/2" -H "Authorization: Bearer other-user"
 ```
 
 #### 3. Modifying Blogs
-Editors can `update` and `delete` their own blogs, defined by a Resource Set called `Owned Blog` with a condition where the `resource.author` attribute equals (ref) the `user.key` attribute.
-
-You can update or delete your blog, assuming the blog with ID 3 was created on [step 2](#2-creating-blogs):
+With the negative comments on it's blog, `my-user` wanted to update the blog:
 ```shell
-curl -X PUT "http://localhost:8080/api/blogs/3" -H "Authorization: Bearer myuser" -H "Content-Type: application/json" -d 'This is my updated blog'
-curl -X DELETE "http://localhost:8080/api/blogs/3" -H "Authorization: Bearer myuser"
+curl -X PUT "http://localhost:8080/api/blogs/1" -H "Authorization: Bearer my-user" -H "Content-Type: application/json" -d 'This is my updated blog'
 ```
-
-Modifying other blogs will result in a 403 Forbidden response.
+But it wasn't enough, eventually it decided to delete the blog:
 ```shell
-curl -X DELETE "http://localhost:8080/api/blogs/1" -H "Authorization: Bearer myuser"
-# 403 Forbidden
+curl -X DELETE "http://localhost:8080/api/blogs/1" -H "Authorization: Bearer my-user"
+```
+Then, it created a new blog:
+```shell
+curl -X POST "http://localhost:8080/api/blogs" -H "Authorization: Bearer my-user" -H "Content-Type: application/json" -d 'I dont like @other-user comments...'
 ```
 
 #### 4. Admin Access
-Assign your user with an `admin` role. Then you can perform any action on the blogs, including deleting other user's blogs.
+Personal blogs are not allowed in the application, so an admin user is needed to delete them.
+Create an admin user and assign it with an `admin` role:
 ```shell
-curl -X DELETE "http://localhost:8080/api/blogs/1" -H "Authorization: Bearer myuser"
+curl -X POST "http://localhost:8080/api/users/signup" -H "Content-Type: application/json" -d 'admin-user'
+curl -X POST "http://localhost:8080/api/users/assign-role" -H "Authorization: Bearer admin-user" -d "admin"
+```
+Now the admin can delete the blog using (assuming the blog ID is 2):
+```shell
+curl -X DELETE "http://localhost:8080/api/blogs/2" -H "Authorization: Bearer admin-user"
 ```
 
 ## Testing
