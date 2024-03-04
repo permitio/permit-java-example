@@ -24,6 +24,7 @@ Before you begin, ensure you have the following installed:
 - Java JDK 21
 - Gradle
 - Docker (optional, for running Permit.io PDP locally)
+- Terraform (optional, for setting up Permit.io resources)
 
 ### 1. Setting Up Permit.io using Terraform
 
@@ -187,5 +188,5 @@ Then, it asserts:
 * Editor can read and create blogs, and can update or delete their own blogs. (ABAC)
 * Editor cannot update or delete other user's blogs. 
 * Viewer can comment on blogs, and can update or delete their own comments. (ABAC)
-* Editor can delete comments on their own blogs. (ReBAC)
+* Blog author (derives to be comment moderator) can delete comments on their own blogs. (ReBAC)
 * Admin can delete other user's blogs and comments.
