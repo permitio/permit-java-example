@@ -1,12 +1,13 @@
 package com.example.permitjavaexample.model;
 
-public class Blog {
-    private Integer id;
-    private String author;
-    private String content;
+import java.util.ArrayList;
+import java.util.List;
 
-    public Blog() {
-    }
+public class Blog {
+    private final Integer id;
+    private final String author;
+    private String content;
+    private final List<Comment> comments = new ArrayList<>();
 
     public Blog(Integer id, String author, String content) {
         this.id = id;
@@ -18,23 +19,19 @@ public class Blog {
         return id;
     }
 
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
     public String getAuthor() {
         return author;
     }
 
-    public void setAuthor(String author) {
-        this.author = author;
-    }
-
-    public String getContent() {
-        return content;
-    }
-
     public void setContent(String content) {
         this.content = content;
+    }
+
+    public List<Comment> getComments() {
+        return comments;
+    }
+
+    public void addComment(Comment comment) {
+        comments.add(comment);
     }
 }

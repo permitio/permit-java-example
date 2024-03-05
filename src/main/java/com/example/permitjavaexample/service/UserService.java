@@ -3,12 +3,10 @@ package com.example.permitjavaexample.service;
 import com.example.permitjavaexample.exception.ForbiddenAccessException;
 import com.example.permitjavaexample.exception.UnauthorizedException;
 import io.permit.sdk.Permit;
-import io.permit.sdk.PermitConfig;
 import io.permit.sdk.api.PermitApiError;
 import io.permit.sdk.api.PermitContextError;
 import io.permit.sdk.enforcement.Resource;
 import io.permit.sdk.enforcement.User;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -17,12 +15,8 @@ import java.io.IOException;
 public class UserService {
     private final Permit permit;
 
-    public UserService(@Value("${permit.api-key}") String apiKey, @Value("${permit.pdp-url}") String pdpUrl) {
-        this.permit = new Permit(
-                new PermitConfig.Builder(apiKey)
-                        .withPdpAddress(pdpUrl)
-                        .build()
-        );
+    public UserService(Permit permit) {
+        this.permit = permit;
     }
 
     public User login(String key) {
